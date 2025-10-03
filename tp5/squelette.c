@@ -19,6 +19,39 @@
 #define abs(a)\
     (a) >= 0 ? (a) : -(a)
     
+#define get(list, i, j, default) \
+    (i >= 0 && i < (list)->h && j >= 0 && j < (list)->w) ? (list)->at[i][j] : default
+    
+int min_top_triangle(energy* e, int i, int j)
+{
+    double left = get(e, i - 1, j - 1, __DBL_MAX__);
+    double top = get(e, i - 1, j, __DBL_MAX__);
+    double right = get(e, i - 1, j + 1, __DBL_MAX__);
+
+    if (top == __DBL_MAX__) printf("out of the image\n");
+
+    if (left <= top && left <= right)   return j - 1;
+    if (top <= left && top <= right)    return j;
+    if (right <= left && right <= top)  return j + 1; 
+    
+    printf("min_top_triangle pas normal\n");
+    return -1;
+    // return min(min(left, top), min(right, top));
+}
+
+int path_min_index(energy* e, int i)
+{
+    int j_min = 0;
+    int e_min = e->at[i][j_min];
+    for (int j = 0; j < e->w; ++j) {
+        if (e_min > e->at[i][j]) {
+            e_min = e->at[i][j];
+            j_min = j;
+        }
+    }
+    return j_min;
+}
+
 void reduce_pixels(image* im, int n);
 
 int main(int argc, char* argv[])
@@ -27,18 +60,94 @@ int main(int argc, char* argv[])
         printf("Fournir le fichier d'entrée et de sortie.\n");
         exit(EXIT_FAILURE);
     }
+    // declaring the values
     char* f_in = argv[1];
     char* f_out = argv[2];
     image* im = image_load(f_in);
+    energy* e = energy_new(im->h, im->w);
+    path* p = path_new(e->h);
 
     // Do some processing here
-    // binarize(im);
-    reduce_column(im, 50);
-    
-    image_save(im, f_out);
+    compute_energy(im, e);
+    image* ei = energy_to_image(e);
+    energy_min_path(e);
+    compute_min_path(e, p);
 
+    // int line = 0;
+    // printf("\033[34;1;4m%3d\033[30;1;4m - \033[32;1;4m%-3d\033[0m: ", line, p->at[line]);
+    // int start = max(p->at[line] - 1, 0);
+    // int end = min(p->at[line] + 1, e->w - 1);
+    // for (int j = start; j <= end; ++j) {
+    //     if (j == p->at[line]) printf("\033[31;1;4m");
+    //     printf("%7.2f", e->at[line][j]);
+    //     if (j == p->at[line]) printf("\033[0m, ");
+    //     else printf(", ");
+    // }printf("\n\n");
+    // printf("\033[34;1;4m%3d\033[30;1;4m - \033[32;1;4m%-3d\033[0m: ", line, p->at[line]);
+    // for (int j = 0; j < e->w; ++j) {
+    //     if (j % 10 == 0) printf("\n%-3d|", j);
+    //     printf("%7.2f, ", e->at[line][j]);
+    // }printf("\n\n\n");
+    
+    // for (int i = 10; i >= 0; --i) {
+    //     int start = max(p->at[i] - 1, 0);
+    //     int end = min(p->at[i] + 1, e->w - 1);
+    //     printf("\033[34;1;4m%3d\033[30;1;4m - \033[32;1;4m%-3d\033[0m: ", i, p->at[i]);
+    //     for (int j = start; j <= end; ++j) {
+    //         if (j == p->at[i]) printf("\033[31;1;4m");
+    //         printf("%7.2f", e->at[i][j]);
+    //         if (j == p->at[i]) printf("\033[0m, ");
+    //         else printf(", ");
+    //     }
+    //     printf("\n");
+    // }
+    // printf("\n");
+
+    // Saving the image    
+    image_save(ei, f_out);
+
+    // freeing the values
+    image_free(ei);
+    path_free(p);
+    energy_free(e);
     image_free(im);
     return 0;
+}
+
+void compute_min_path(energy* e, path* p)
+{
+    // NOTE: indice de l'énergie minimum de la dernière colonne
+    int j = path_min_index(e, e->h - 1);
+    p->at[e->h - 1] = j;
+
+    // NOTE: de l'antépénultième à la deuxième
+    for (int i = e->h - 1; i > 0; --i) {
+        j = min_top_triangle(e, i, j);
+        p->at[i - 1] = j;
+    }
+}
+
+/*
+Transformation en matrice utilisable par l'algo de Moore-Dijkstra.
+*/
+void energy_min_path(energy* e)
+{
+    // la colonne 1 ne change pas
+    for (int i = 1; i < e->h; ++i) {
+        for (int j = 0; j < e->w; ++j) {
+            int j_min = min_top_triangle(e, i, j);
+
+            e->at[i][j] += e->at[i-1][j_min];
+        }
+    }
+}
+
+void path_free(path* p)
+{
+    if (p == NULL) return;
+    free(p->at);
+    free(p);
+    p = NULL;
 }
 
 path* path_new(int n)
@@ -169,6 +278,7 @@ void energy_free(energy* e)
     }
     free(e->at);
     free(e);
+    e = NULL;
 }
 
 energy* energy_new(int h, int w)
@@ -227,6 +337,7 @@ void image_free(image* im)
     }
     free(im->at);
     free(im);
+    im = NULL;
 }
 
 image* image_new(int h, int w)

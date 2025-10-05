@@ -68,11 +68,10 @@ int main(int argc, char* argv[])
     path* p = path_new(e->h);
 
     // Do some processing here
-    compute_energy(im, e);
-    image* ei = energy_to_image(e);
-    energy_min_path(e);
-    compute_min_path(e, p);
-
+    // compute_energy(im, e);
+    // energy_min_path(e);
+    // compute_min_path(e, p);
+    // 
     // int line = 0;
     // printf("\033[34;1;4m%3d\033[30;1;4m - \033[32;1;4m%-3d\033[0m: ", line, p->at[line]);
     // int start = max(p->at[line] - 1, 0);
@@ -88,7 +87,7 @@ int main(int argc, char* argv[])
     //     if (j % 10 == 0) printf("\n%-3d|", j);
     //     printf("%7.2f, ", e->at[line][j]);
     // }printf("\n\n\n");
-    
+    //
     // for (int i = 10; i >= 0; --i) {
     //     int start = max(p->at[i] - 1, 0);
     //     int end = min(p->at[i] + 1, e->w - 1);
@@ -103,15 +102,38 @@ int main(int argc, char* argv[])
     // }
     // printf("\n");
 
+    reduce_seam_carving(im, 150);
+
     // Saving the image    
-    image_save(ei, f_out);
+    image_save(im, f_out);
 
     // freeing the values
-    image_free(ei);
     path_free(p);
     energy_free(e);
     image_free(im);
     return 0;
+}
+
+void reduce_seam_carving(image* im, int n)
+{
+    if (n <= 0) return;
+    energy* e = energy_new(im->h, im->w);
+    path* p = path_new(e->h);
+    
+    for (int k = 0; k < n; ++k) {
+    compute_energy(im, e);
+    energy_min_path(e);
+    compute_min_path(e, p);
+    for (int i = 0; i < im->h; ++i) {
+        for (int j = p->at[i]; j < im->w - 1; ++j) {
+            im->at[i][j] = im->at[i][j + 1];
+        }
+    }
+    --(im->w);
+    }
+
+    energy_free(e);
+    path_free(p);
 }
 
 void compute_min_path(energy* e, path* p)
@@ -163,8 +185,8 @@ path* path_new(int n)
 void reduce_column(image* im, int n)
 {
     energy* e = energy_new(im->h, im->w);
-    compute_energy(im, e);
     for (int i = 0; i < n; ++i) {
+        compute_energy(im, e);
         reduce_one_column(im, e);
     }
     energy_free(e);
@@ -208,8 +230,8 @@ int best_column(energy* e)
 void reduce_pixels(image* im, int n)
 {
     energy* e = energy_new(im->h, im->w);
-    compute_energy(im, e);
     for (int i = 0; i < n; ++i) {
+        compute_energy(im, e);
         reduce_one_pixel(im, e);
         --(im->w);
         --(e->w);

@@ -1,15 +1,12 @@
-FILE := ex1.c
-
+FILE := main.ml
 BUILD := ./build
 EXE := $(BUILD)/prog.exe
-
-FLAGS := -O0 -Wall -Wextra -Wvla -Wno-unused -fsanitize=address,undefined
-VERSION := c23
 
 all: compile
 
 compile: $(BUILD)
-	gcc -std=$(VERSION) -ggdb $(FLAGS) $(LIBS) -o $(EXE) $(FILE)
+	ocamlopt $(FILE) -o $(EXE)
+	
 
 $(BUILD):
 	mkdir -p $(BUILD)

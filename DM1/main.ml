@@ -1,4 +1,6 @@
 open Printf
+(* Si enabled vaut true, les assertion seront exécutées *)
+let (enabled: bool) = true
 
 (* Types *)
 type trie = V | N of char * trie * trie
@@ -10,7 +12,7 @@ let exemple2 = ["barbue"; "barbier"; "barbie"; "banquier"; "banque"; "banquet"; 
 let trie_exemple = N ( 'd', N ( 'o', N ( '$', V, N ( 'l', N ('e', N ('$', V, V), V), N ( 'd', N ( 'u', N ('$', V, V), N ('o', N ('s', N ('$', V, V), V), V) ), V ) ) ), N ('e', N ('$', V, V), V) ), N ( 's', N ( 'i', N ( '$', V, N ( 't', N ('e', N ('$', V, V), V), N ('r', N ('e', N ('$', V, V), V), V) ) ), N ( 'a', N ('c', N ('$', V, V), V), N ('k', N ('i', N ('$', V, V), V), V) ) ), V ) )
 let trie_exemple2 = N ('b', N ('a', N ('r', N ('b', N ('u', N ('e', N ('$', V, V), V), N ('i', N ('e', N ('r', N ('$', V, V), N ('$', V, V)), V), N ('e', N ('c', N ('u', N ('e', N ('$', V, V), V), V), V), V))), V), N ('n', N ('q', N ('u', N ('i', N ('e', N ('r', N ('$', V, V), V), V), N ('e', N ('$', V, N ('t', N ('$', V, V), V)), V)), V), V), V)), N ('r', N ('a', N ('q', N ('u', N ('a', N ('g', N ('e', N ('$', V, V), V), V), V), V), V), V), V)), N ('a', N ('s', N ('s', N ('i', N ('e', N ('t', N ('t', N ('e', N ('$', V, V), V), V), V), N ('s', N ('e', N ('$', V, V), V), V)), V), V), N ('v', N ('i', N ('o', N ('n', N ('$', V, V), V), V), V), N ('r', N ('r', N ('i', N ('e', N ('r', N ('e', N ('$', V, V), V), V), V), V), N ('b', N ('i', N ('t', N ('r', N ('e', N ('$', V, V), V), V), V), V), V)), N ('b', N ('r', N ('i', N ('s', N ('$', V, V), V), V), V), V)))), V))
 
-(* Comparaisons *)
+(* Comparaisons et égalités *)
 
 let eq_mot (mot1: mot) (mot2: mot) = 
   if List.length mot1 != List.length mot2 then false
@@ -109,12 +111,37 @@ let compte_mots_longs_tests = [
   (trie_exemple2, (6, 12));
 ]
 
+let tableau_occurences_tests = [
+  ("bananes", [|2; 1; 0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 2; 0; 0; 0; 0; 1; 0; 0; 0; 0; 0; 0; 0|]);
+  ("azerty", [|1; 0; 0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 1; 0; 1; 0; 0; 0; 0; 1; 1|]);
+  ("qwerty", [|0; 0; 0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 1; 1; 0; 1; 0; 0; 1; 0; 1; 0|]);
+  ("abcdefghijklmnopqrstuvwxyz", [|1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1|]);
+]
+
 (* Tests *)
 let from_bool (value: bool) = if value then "true" else "false"
 
+(* Support pour Ansi (Stack Overflow) *)
+module Ansi = struct
+  let esc = "\x1b["
+
+  let reset     = esc ^ "0m"
+  let bold      = esc ^ "1m"
+  let underline = esc ^ "4m"
+
+  let black     = esc ^ "30m"
+  let red       = esc ^ "31m"
+  let green     = esc ^ "32m"
+  let yellow    = esc ^ "33m"
+  let blue      = esc ^ "34m"
+  let magenta   = esc ^ "35m"
+  let cyan      = esc ^ "36m"
+  let white     = esc ^ "37m"
+end
+
 (*
-Test la fonction f dans un unit test de nom name.
-Compare la sortie de `f fst(test_list)` et `snd(test_list)` avec eq.
+Test la fonction `f` dans un unit test de nom `name`.
+Compare la sortie de `f fst(test_list)` et `snd(test_list)` avec `eq`.
 
 Pour des raisons de variadicité (variabilité de l'arité), eq prend deux entrées
 de types différents (car 'b peut être le type d'une fonction).
@@ -127,16 +154,22 @@ let test_f (f: 'a -> 'b) (name: string) (test_list: ('a * 'c) list) (eq: 'b -> '
       let value = f arg in (* TODO: print v on failure *)
       if not (eq (value) (expectation)) then
       begin
-        Printf.printf "    FAIL: %s on test n°%d\n" name counter;
+        Printf.printf "    %sFAIL: %s on test n°%d\n" (Ansi.bold ^ Ansi.red) name counter;
         let _, c, s = inner_test q (counter + 1) succ in
         false, c, s
       end
       else
         inner_test q (counter + 1) (succ + 1)
   in
-  printf "Testing `%s`:\n" name;
+  printf "%sTesting `%s`:\n" (Ansi.bold ^ Ansi.cyan) name;
   let r, count, succeeded = inner_test test_list 0 0 in
-  printf "ends with %d/%d.\n\n" succeeded count; r
+  printf "%sends with %d/%d%s.\n\n" 
+    (Ansi.bold ^ if succeeded = count then Ansi.yellow else Ansi.magenta) 
+    succeeded 
+    count 
+    (Ansi.reset)
+  ; 
+  r
 
 (*
 -------------------------------------------------------------------------------
@@ -154,8 +187,6 @@ let rec est_bien_forme (a: trie) =
   | N('$', _, _) -> false
   | N(_, V, _) -> false
   | N(_, g, d) -> est_bien_forme g && est_bien_forme d
-  
-let _ = test_f est_bien_forme "est_bien_forme" est_bien_forme_tests (=)
 
 (* QU 2:
 mot_of_string : string -> mot *)
@@ -166,8 +197,6 @@ let mot_of_string (s: string) =
     res := s.[i]::!res
   done;
   !res
-
-let _ = test_f mot_of_string "mot_of_string" mot_of_string_tests eq_mot
 
 (* QU 3:
 afficher_mot : mot -> unit *)
@@ -194,8 +223,6 @@ and concat_on_all (c: char) (l: mot list) =
   | [] -> []
   | t::q -> (c::t)::concat_on_all c q
 
-let _ = test_f mots_of_trie "mots_of_trie" mots_of_trie_tests eq_mot_list
-
 (*
 -------------------------------------------------------------------------------
 EXERCICE 2
@@ -211,8 +238,6 @@ let rec cardinal (t: trie) =
   | N('$', V, d) -> 1 + cardinal d
   | N(_, g, d) -> cardinal g + cardinal d
 
-let _ = test_f cardinal "cardinal" cardinal_tests (=)
-
 (* QU2:
 recherche : trie -> mot -> bool *)
 
@@ -225,11 +250,28 @@ let rec recherche (t: trie) (m: mot) =
     | N('$', V, d) -> (hd = '$') || recherche d m
     | N(c, g, d) -> ((c = hd) && recherche g q) || (recherche d m)
 
-let _ = test_f recherche "recherche" recherche_tests (comp_partial (=))
-
 (* QU 3: Justifier grâce à la Remarque 3 que cette complexité est en fait en 𝒪(𝑛) avec 𝑛 la
     taille du mot recherché. Quelle est la complexité dans le meilleur cas ?
-TODO: !!
+
+Un variant pour recherche est la taille du trie que l'on explore. Ainsi, naïvement,
+on majore la complexité de recherche avec cette dernière ce qui nous fait dire que 
+recherche est en O(h) avec h la hauteur du trie. 
+Cependant, dès que le mot est trouvé, ou que le trie vide, on peut conclure.
+Si le trie est vide avant que toutes les lettres du mot n'est été trouvées, on peut affirmer, avec l'hypothèse 
+de la Remarque 3, que le mot n'est pas représenté par le trie.
+
+A chaque appel de recherche, on compare la lettre du mot à laquelle on est rendu avec
+l'étiquette du nœud. 
+Si les deux correspondent, on cherche les lettres suivantes dans le sous-trie gauche,
+sinon, dans le sous-trie droit. 
+En effet, l'hypothèse de la Remarque 3, on affirme que procéder ainsi nous assure 
+que si le début du mot est représenté dans le sous-arbre gauche, ce même début de mot ne peut 
+être représenter dans le sous-trie droit.
+
+Conclusion: la complexité dépend de la taille du mot, donc recherche est en O(n).
+
+La complexité dans le meilleur cas est en O(n), car que le mot soit représenté ou non par le trie,
+on devra égrainé le trie pour s'en assurer.
 *)
 
 (* QU 4:
@@ -246,8 +288,6 @@ let rec insere (t: trie) (m: mot) =
     | N(c, g, d) when c = hd -> N(c, insere g q, d)
     | N(c, g, d) -> N(c, g, insere d m)
 
-let _ = test_f insere "insere" insere_tests (comp_partial (fun t l -> eq_mot_list (mots_of_trie t) l))
-
 (* QU 5:
 trie_of_list : string list -> trie *)
 
@@ -261,8 +301,6 @@ let trie_of_list (liste: string list) =
       | _ -> aux q (insere t (mot_of_string mot))
   in
   aux liste V
-
-let _ = test_f trie_of_list "trie_of_list" trie_of_list_tests (fun t1 t2 -> eq_mot_list (mots_of_trie t1) (mots_of_trie t2))
   
 (* QU 6:
 longueur_max : trie -> int *)
@@ -273,8 +311,6 @@ let rec longueur_max (t: trie) =
   | N('$', V, V) -> 0
   | N('$', V, d) -> longueur_max d
   | N(_, g, d) -> max (1+ longueur_max g) (longueur_max d)
-
-let _ = test_f longueur_max "longueur_max" longueur_max_tests (=)
 
 (* QU 7:
 compte_mots_longs : trie -> int -> int *)
@@ -299,8 +335,6 @@ let rec compte_mots_longs (t: trie) (n: int) =
       | N('$', V, d) -> 1 + compte_mots_longs d (n-1)
       | N(_, g, d) -> compte_mots_longs g (n-1) + compte_mots_longs d (n-1)
 
-let _ = test_f compte_mots_longs "compte_mots_longs" compte_mots_longs_tests (comp_partial (=))
-
 (* QU 8:
 iter_trie : (mot -> unit) -> trie -> unit *)
 
@@ -309,10 +343,10 @@ let iter_trie (f: mot -> unit) (t: trie) =
   let rec aux (liste: mot list) = 
     match liste with
     | [] -> ()
-    | t::q -> ignore(f t); aux q
+    | t::q -> f t; aux q
   in aux l
 
-(* let _ = iter_trie (afficher_mot) trie_exemple2 *)
+let _ = iter_trie (afficher_mot) trie_exemple2; print_newline ()
 
 (* QU 9:
 affiche_mots : trie -> unit
@@ -326,8 +360,10 @@ let list_of_trie (t: trie) =
   (iter_trie (fun m -> (l := m::!l)) t);
   !l
 
-(* let _ = print_newline ()
-let _ = List.map afficher_mot (list_of_trie trie_exemple2) *)
+let _ = affiche_mots trie_exemple2
+let _ = print_newline ()
+let _ = List.map afficher_mot (list_of_trie trie_exemple2)
+let _ = print_newline ()
 
 (* QU 10:
 tableau_occurences : string -> int array *)
@@ -339,10 +375,6 @@ let rec tableau_occurences (s: string) =
     occ.(indice) <- occ.(indice) + 1
   done;
   occ
-
-(* let _ = print_newline ()
-let _ = Array.map (fun a -> printf "%d, " a) (tableau_occurences "bananze")
-let _ = print_newline (); print_newline () *)
 
 (*
 -------------------------------------------------------------------------------
@@ -364,8 +396,8 @@ let cat_first_line (filename: string) =
       close_in file
   with Sys_error message -> printf "%s" message
 
-(* let _ = cat_first_line "cinq_cent_mots.txt"
-let _ = print_newline () *)
+let _ = cat_first_line "cinq_cent_mots.txt"
+let _ = print_newline ()
 
 (* QU 2:
 cat_first_100_lines : string -> unit *)
@@ -389,8 +421,8 @@ let cat_first_100_lines (filename: string) =
     with Sys_error (message: string) -> 
       printf "%s" message
 
-(* let _ = cat_first_100_lines "cinq_cent_mots.txt"
-let _ = print_newline () *)
+let _ = cat_first_100_lines "cinq_cent_mots.txt"
+let _ = print_newline ()
 
 (* QU 3:
 cat : string -> unit *)
@@ -410,7 +442,8 @@ let cat (filename: string) =
     with Sys_error (message: string) -> 
       printf "%s" message
 
-(* let _ = cat "cinq_cent_mots.txt" *)
+let _ = cat "cinq_cent_mots.txt"
+let _ = print_newline ()
 
 (* QU 4:
 trie_of_file : string -> trie *)
@@ -433,11 +466,104 @@ let rec trie_of_file (filename: string) =
 
 let cinq_cents_mots = trie_of_file "cinq_cent_mots.txt"
 let ods6_lowercase = trie_of_file "ods6_lowercase.txt"
-let _ = printf "%d\n" (cardinal cinq_cents_mots)
-let _ = printf "%d\n" (cardinal ods6_lowercase)
 
 (*
 -------------------------------------------------------------------------------
-EXERCICE 3
+EXERCICE 4
 -------------------------------------------------------------------------------
 *)
+
+(* QU 1:
+sous_mots : trie -> string -> unit *)
+
+(* QU 2:
+afficher_anagrammes : trie -> string -> unit *)
+
+(* QU 3:
+filtrer_sous_mots : trie -> string -> trie
+filtrer_anagrammes : trie -> string -> trie *)
+
+(* QU 4:
+filtrer_sur_mots : trie -> string -> trie *)
+
+(* QU 5:
+affiche_decomposition : trie -> string -> unit *)
+
+(* QU 6:
+filtrer_decompositions : trie -> string -> trie *)
+
+(* QU 7:
+filtrer_decompositions_uniques : trie -> string -> trie *)
+
+(*
+-------------------------------------------------------------------------------
+EXERCICE 5
+-------------------------------------------------------------------------------
+*)
+
+(* ... *)
+
+(*
+-------------------------------------------------------------------------------
+TESTS
+-------------------------------------------------------------------------------
+*)
+
+(* 1.1 *)
+let x = test_f est_bien_forme "est_bien_forme" est_bien_forme_tests (=)
+let _ = if enabled then assert x
+
+(* 1.2 *)
+let x = test_f mot_of_string "mot_of_string" mot_of_string_tests eq_mot
+let _ = if enabled then assert x
+
+(* 1.3 *)
+
+(* 1.4 *)
+let x = test_f mots_of_trie "mots_of_trie" mots_of_trie_tests eq_mot_list
+let _ = if enabled then assert x
+
+(* 2.1 *)
+let x = test_f cardinal "cardinal" cardinal_tests (=)
+let _ = if enabled then assert x
+
+(* 2.2 *)
+let x = test_f recherche "recherche" recherche_tests (comp_partial (=))
+let _ = if enabled then assert x
+
+(* 2.4 *)
+let x = test_f insere "insere" insere_tests (comp_partial (fun t l -> eq_mot_list (mots_of_trie t) l))
+let _ = if enabled then assert x
+
+(* 2.5 *)
+let x = test_f trie_of_list "trie_of_list" trie_of_list_tests (fun t1 t2 -> eq_mot_list (mots_of_trie t1) (mots_of_trie t2))
+let _ = if enabled then assert x
+
+(* 2.6 *)
+let x = test_f longueur_max "longueur_max" longueur_max_tests (=)
+let _ = if enabled then assert x
+
+(* 2.7 *)
+let x = test_f compte_mots_longs "compte_mots_longs" compte_mots_longs_tests (comp_partial (=))
+let _ = if enabled then assert x
+
+(* 2.8 *)
+
+(* 2.9 *)
+
+(* 2.10 *)
+let x = test_f tableau_occurences "tableau_occurences" tableau_occurences_tests (=)
+let _ = if enabled then assert x
+
+(* 3.1 *)
+
+(* 3.2 *)
+
+(* 3.3 *)
+
+(* 3.4 *)
+let x = (cardinal cinq_cents_mots) == 471
+let _ = if enabled then assert x
+
+let x = (cardinal ods6_lowercase) == 386264
+let _ = if enabled then assert x

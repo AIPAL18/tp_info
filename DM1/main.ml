@@ -335,6 +335,22 @@ let rec compte_mots_longs (t: trie) (n: int) =
       | N('$', V, d) -> 1 + compte_mots_longs d (n-1)
       | N(_, g, d) -> compte_mots_longs g (n-1) + compte_mots_longs d (n-1)
 
+let rec compte_mots_longs (t: trie) (n: int) =
+  match t with
+  | V -> 0
+  | N('$', V, d) ->
+    if n > 1 then
+      compte_mots_longs d n
+    else if n = 1 then
+      0
+    else
+      1 + compte_mots_longs d (n-1)
+  | N(_, g, d) ->
+    if n > 1 then
+      compte_mots_longs g (n - 1) + compte_mots_longs d n
+    else
+      compte_mots_longs g (n-1) + compte_mots_longs d (n-1)
+
 (* QU 8:
 iter_trie : (mot -> unit) -> trie -> unit *)
 
@@ -475,6 +491,25 @@ EXERCICE 4
 
 (* QU 1:
 sous_mots : trie -> string -> unit *)
+(* Construire un tire avec uniquement les bons mots, puis utiliser iter_trie ? *)
+
+let rec mot_sans (m: mot) (c: char) = 
+  match m with
+  | [] -> m
+  | t::q when t = c -> q
+  | t::q -> t::mot_sans q c
+  
+let sous_mots (tr: trie) (s: string) =
+  let rec get_sous_mots (m: mot) =
+    match m with
+    | [] -> []
+    | c::q -> (parcours_trie_sur_mot tr (mot_sans m c)) @ get_sous_mots q
+  and parcours_trie_sur_mot (t: trie) (m: mot) =
+    match t with
+    | V -> []
+    | N('$', g, d) ->  []
+  in 
+  get_sous_mots tr (mot_of_string s)
 
 (* QU 2:
 afficher_anagrammes : trie -> string -> unit *)
@@ -562,8 +597,20 @@ let _ = if enabled then assert x
 (* 3.3 *)
 
 (* 3.4 *)
-let x = (cardinal cinq_cents_mots) == 471
+
+let cinq_cents_mots_tests = [
+  (cinq_cents_mots, 471);
+]
+
+let ods6_lowercase_tests = [
+  (ods6_lowercase, 386264);
+]
+
+let x = test_f cardinal "cinq_cents_mots" cinq_cents_mots_tests (=)
 let _ = if enabled then assert x
 
-let x = (cardinal ods6_lowercase) == 386264
+let x = test_f cardinal "ods6_lowercase" ods6_lowercase_tests (=)
 let _ = if enabled then assert x
+
+(* EOF *)
+let _ = printf "%sFin\n%s" (Ansi.bold ^ Ansi.underline) (Ansi.reset)

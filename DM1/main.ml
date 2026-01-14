@@ -1,41 +1,47 @@
 open Printf
-(* Si enabled vaut true, les assertion seront exécutées *)
+(* Si enabled vaut true, les assertions seront exécutées *)
 let (enabled: bool) = true
 
-(* Types *)
+(*
+-------------------------------------------------------------------------------
+Types
+-------------------------------------------------------------------------------
+*)
 type trie = V | N of char * trie * trie
 type mot = char list
 
-(* Exemples *)
+(*
+-------------------------------------------------------------------------------
+Exemples
+-------------------------------------------------------------------------------
+*)
 let exemple = ["sire";"site";"ski";"sac";"dodos";"dodu";"dole";"de";"si";"do";]
 let exemple2 = ["barbue"; "barbier"; "barbie"; "banquier"; "banque"; "banquet"; "braquage"; "barbecue"; "assiette"; "assise"; "avion"; "arriere"; "arbitre"; "abris";]
 let trie_exemple = N ( 'd', N ( 'o', N ( '$', V, N ( 'l', N ('e', N ('$', V, V), V), N ( 'd', N ( 'u', N ('$', V, V), N ('o', N ('s', N ('$', V, V), V), V) ), V ) ) ), N ('e', N ('$', V, V), V) ), N ( 's', N ( 'i', N ( '$', V, N ( 't', N ('e', N ('$', V, V), V), N ('r', N ('e', N ('$', V, V), V), V) ) ), N ( 'a', N ('c', N ('$', V, V), V), N ('k', N ('i', N ('$', V, V), V), V) ) ), V ) )
 let trie_exemple2 = N ('b', N ('a', N ('r', N ('b', N ('u', N ('e', N ('$', V, V), V), N ('i', N ('e', N ('r', N ('$', V, V), N ('$', V, V)), V), N ('e', N ('c', N ('u', N ('e', N ('$', V, V), V), V), V), V))), V), N ('n', N ('q', N ('u', N ('i', N ('e', N ('r', N ('$', V, V), V), V), N ('e', N ('$', V, N ('t', N ('$', V, V), V)), V)), V), V), V)), N ('r', N ('a', N ('q', N ('u', N ('a', N ('g', N ('e', N ('$', V, V), V), V), V), V), V), V), V)), N ('a', N ('s', N ('s', N ('i', N ('e', N ('t', N ('t', N ('e', N ('$', V, V), V), V), V), N ('s', N ('e', N ('$', V, V), V), V)), V), V), N ('v', N ('i', N ('o', N ('n', N ('$', V, V), V), V), V), N ('r', N ('r', N ('i', N ('e', N ('r', N ('e', N ('$', V, V), V), V), V), V), N ('b', N ('i', N ('t', N ('r', N ('e', N ('$', V, V), V), V), V), V), V)), N ('b', N ('r', N ('i', N ('s', N ('$', V, V), V), V), V), V)))), V))
 
 (* Comparaisons et égalités *)
-
-let eq_mot (mot1: mot) (mot2: mot) = 
-  if List.length mot1 != List.length mot2 then false
-  else
-    let rec inner_comp m1 m2 = 
-      match m1, m2 with
-      | [], [] -> true
-      | t1::q1, t2::q2 when t1 = t2 -> inner_comp q1 q2
-      | _ -> false
-    in inner_comp mot1 mot2
+let rec eq_mot (mot1: mot) (mot2: mot) =
+  match mot1, mot2 with
+  | [], [] -> true
+  | _, [] | [], _ -> false
+  | t1::q1, t2::q2 when t1 = t2 -> eq_mot q1 q2
+  | _::_, _::_ -> false
   
 let rec eq_mot_list (ml1: mot list) (ml2: mot list) = 
-  if List.length ml1 != List.length ml2 then false
+  if List.length ml1 != List.length ml2 then false (* faster ? *)
   else
     match ml1 with
     | [] -> true
     | t::q -> (is_in t ml2) && (eq_mot_list q (remove t ml2))
 and remove (e: 'a) (l: 'a list) =
+  (* Retourne `l` sans l'élément `e` *)
   match l with
   | [] -> l
   | t::q when t = e -> q
   | t::q -> t::remove e q
 and is_in (e: 'a) (l: 'a list) = 
+  (* Retourne si `e` est dans `l` *)
   match l with
   | [] -> false
   | t::q when eq_mot t e -> true
@@ -52,8 +58,11 @@ Dans le cas échéant, l'égalité sera sous-jacente.
 let comp_partial (comp: 'b -> 'c -> bool) (f: 'a -> 'b) ((arg: 'a), (expected: 'c)) =
   comp (f arg) expected
 
-(* Samples *)
-  
+(*
+-------------------------------------------------------------------------------
+Samples
+-------------------------------------------------------------------------------
+*)
 let est_bien_forme_tests = [
   (N('a', N('$', N('a',  N('$', V, V), V), V), V), false);
   (N('a', V, N('b', N('a', V, V), N('b', V, V))), false);
@@ -118,10 +127,14 @@ let tableau_occurences_tests = [
   ("abcdefghijklmnopqrstuvwxyz", [|1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1|]);
 ]
 
-(* Tests *)
+(*
+-------------------------------------------------------------------------------
+Tests
+-------------------------------------------------------------------------------
+*)
 let from_bool (value: bool) = if value then "true" else "false"
 
-(* Support pour Ansi (Stack Overflow) *)
+(* Support pour Ansi (source: Stack Overflow) *)
 module Ansi = struct
   let esc = "\x1b["
 
@@ -219,6 +232,7 @@ let rec mots_of_trie (t: trie) =
   | N('$', V, d) -> ['$']::(mots_of_trie d)
   | N(c, g, d) -> (concat_on_all c (mots_of_trie g)) @ mots_of_trie d
 and concat_on_all (c: char) (l: mot list) = 
+  (* Concatène c avec chaque mot de l *)
   match l with
   | [] -> []
   | t::q -> (c::t)::concat_on_all c q
@@ -292,6 +306,7 @@ let rec insere (t: trie) (m: mot) =
 trie_of_list : string list -> trie *)
 
 let trie_of_list (liste: string list) =
+  (* Même rôle que trie_of_list mais utilise le principe de l'"accumulateur" *)
   let rec aux (l: string list) (t: trie) = 
     match l with
     | [] -> t
@@ -316,8 +331,10 @@ let rec longueur_max (t: trie) =
 compte_mots_longs : trie -> int -> int *)
 
 let get_letter (t: trie) = 
+  (* Retourne l'étiquette de `t`. 
+  (Chaîne de caractère pour des raisons d'affichage lors du debug) *)
   match t with
-  | V -> "\b\b"
+  | V -> " "
   | N(c, _, _) -> sprintf "%c" c
 
 let rec compte_mots_longs (t: trie) (n: int) =
@@ -336,6 +353,7 @@ let rec compte_mots_longs (t: trie) (n: int) =
       | N(_, g, d) -> compte_mots_longs g (n-1) + compte_mots_longs d (n-1)
 
 let rec compte_mots_longs (t: trie) (n: int) =
+  (* Alternative de présentation *)
   match t with
   | V -> 0
   | N('$', V, d) ->
@@ -356,6 +374,7 @@ iter_trie : (mot -> unit) -> trie -> unit *)
 
 let iter_trie (f: mot -> unit) (t: trie) = 
   let l = mots_of_trie t in
+  (* Applique f sur chaque `mot` de `liste` *)
   let rec aux (liste: mot list) = 
     match liste with
     | [] -> ()
@@ -368,8 +387,8 @@ let _ = iter_trie (afficher_mot) trie_exemple2; print_newline ()
 affiche_mots : trie -> unit
 list_of_trie : trie -> mot list *)
 
-let affiche_mots (t: trie) = 
-  iter_trie afficher_mot t
+let affiche_mots = 
+  iter_trie afficher_mot
 
 let list_of_trie (t: trie) =
   let l = ref [] in
@@ -384,7 +403,7 @@ let _ = print_newline ()
 (* QU 10:
 tableau_occurences : string -> int array *)
 
-let rec tableau_occurences (s: string) = 
+let rec tableau_occurences (s: string) =
   let occ = Array.init 26 (fun _ -> 0) in
   for i = 0 to String.length s - 1 do
     let indice = int_of_char s.[i] - 97 in
@@ -410,7 +429,7 @@ let cat_first_line (filename: string) =
       close_in file
     with End_of_file ->
       close_in file
-  with Sys_error message -> printf "%s" message
+  with Sys_error (message: string) -> printf "%s" message
 
 let _ = cat_first_line "cinq_cent_mots.txt"
 let _ = print_newline ()
@@ -419,6 +438,8 @@ let _ = print_newline ()
 cat_first_100_lines : string -> unit *)
 
 let cat_first_100_lines (filename: string) =
+  (* Même principe que cat_first_100_lines mais pour n ligne. 
+  Permet l'utilisation d'un compteur *)
   let rec cat_n_lines (file: in_channel) (n: int) =
     if n = 0 then
       ()
@@ -444,6 +465,7 @@ let _ = print_newline ()
 cat : string -> unit *)
 
 let cat (filename: string) = 
+  (* Affiche ligne par ligne jusqu'à la fin du fichier *)
   let rec cat_until_eof (file: in_channel) =
     try
       let content = input_line file in
@@ -465,17 +487,18 @@ let _ = print_newline ()
 trie_of_file : string -> trie *)
 
 let rec trie_of_file (filename: string) = 
-  let rec aux (file: in_channel) (t: trie) =
+  (* Ajoute chaque ligne (considérée comme un `mot`) de `file` à `t` *)
+  let rec build_trie (file: in_channel) (t: trie) =
     try
       let content = input_line file in
-      aux file (insere t (mot_of_string content))
+      build_trie file (insere t (mot_of_string content))
     with End_of_file ->
       close_in file;
       t
   in
     try
       let file = open_in filename in 
-        aux file V
+        build_trie file V
     with Sys_error (message: string) -> 
       printf "%s" message; 
       V
@@ -493,6 +516,8 @@ EXERCICE 4
 sous_mots : trie -> string -> unit *)
 (* Construire un tire avec uniquement les bons mots, puis utiliser iter_trie ? *)
 
+
+(* Tentative infructueuse *)
 let rec mot_sans (m: mot) (c: char) = 
   match m with
   | [] -> m
@@ -508,9 +533,10 @@ let sous_mots (tr: trie) (s: string) =
     match t with
     | V -> []
     | N('$', g, d) ->  []
+    | N(c, g, d) -> []
   in 
-  get_sous_mots tr (mot_of_string s)
-
+  get_sous_mots (mot_of_string s)
+  
 (* QU 2:
 afficher_anagrammes : trie -> string -> unit *)
 

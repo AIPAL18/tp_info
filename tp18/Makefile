@@ -1,4 +1,4 @@
-FILE := main.ml
+FILE := main.c
 
 BUILD := ./build
 EXE := $(BUILD)/prog.exe
@@ -6,13 +6,13 @@ EXE := $(BUILD)/prog.exe
 all: compile
 
 compile: $(BUILD)
-	ocamlc $(FILE) -o $(EXE)
+	gcc -std=c23 -O3 -DNDEBUG -Wall -Wextra -Werror -Wno-vla -Wno-unused -fsanitize=address,undefined $(FILE) -o $(EXE)
 
 $(BUILD):
 	mkdir -p $(BUILD)
 
 run: compile
 	@echo "---------------\n"
-	@ocamlrun $(EXE)
+	@$(EXE)
 	@echo "\n---------------"
 

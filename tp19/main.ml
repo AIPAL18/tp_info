@@ -144,7 +144,12 @@ let () =
     Tests.pa __POS__  (from2 (succ (from10 i)) = (i+1) && to_true i)
   done
 
-(* get_arbre : int -> 'a arbre -> 'a *)
+(* ----------------------------------------------------------------------------
+EXERCICE 2
+---------------------------------------------------------------------------- *)
+  
+(* QU 1:
+get_arbre : int -> 'a arbre -> 'a *)
 let rec get_arbre (i: int) (a: 'a arbre) = 
   match a with
   | F(e) -> if i = 0 then e else failwith "Indice overflow"
@@ -181,11 +186,11 @@ let rec get (u: 'a liste_binaire) (i: int) =
   | [] -> failwith "Index overflow"
   | None::q -> get q i
   | Some(F(e))::q -> if i = 0 then e else get q (i-1)
-  | Some(N(n, g, d))::q ->
+  | Some(N(n, g, d) as a)::q ->
     if i >= n then
       get q (i-n)
     else
-      get_arbre i (N(n, g, d))
+      get_arbre i a
 
 let () = Tests.pa __POS__  ((get ex2 10) = 0.0)
 
@@ -193,10 +198,16 @@ let () = Tests.pa __POS__  ((get ex2 10) = 0.0)
 Exprimer la complexité dans le pire cas de get u k en fonction de |𝑢|. Est-ce que
 l’on a une complexité en 𝒪(1) en fixant 𝑘 = 0 ?
 
-Les appels récursifs de get est en $\cal O(\lceil\log_2(|u|+1)\rceil)$ puis get_arbre est en $\cal O(|u|)$
+Les appels récursifs de get est en $\cal O(\lceil\log_2(|u|+1)\rceil)$ puis get_arbre est en $\cal O(|u|)$.
+Or l'appel à get_arbre n'est effectué qu'à la fin.
 
-D'où get en $\cal O(|u|\log_2(|u|))$
- *)
+D'où get en $\cal O(|u| + \log_2(|u|))$ i.e. $\cal O(\log(n))$
+
+Pour k = 1:
+Le pire cas: |u| est une puissance de 2. Dans ce cas, la liste ne représente 
+qu'un arbre, le dernier. 
+D'où $\cal O(\log(n))$
+*)
 
 (* QU 6:
 set : 'a liste_binaire -> int -> 'a -> 'a liste_binaire *)
@@ -223,7 +234,7 @@ let merge_arbre (a1: 'a arbre) (a2: 'a arbre) =
   | N(n1, _, _), N(n2, _, _) when n1 = n2 -> N(n1+n2, a1, a2)
   | N(_, _, _), N(_, _, _)
   | F(_), N(_, _, _)
-  | N(_, _, _), F(_) -> failwith "Cannot to merge trees of different formats."
+  | N(_, _, _), F(_) -> failwith "Cannot merge trees of different formats."
 
 let rec cons_arbre (e: 'a) (l: 'a liste_binaire) (ar: 'a arbre) = 
   match l with
@@ -253,11 +264,9 @@ tail : 'a liste_binaire -> 'a liste_binaire *)
   | Z::q -> U::pred q
   | U::q -> Z::q *)
 
-let uncons
-
 let () = List.iter (printf "%.1f, ") (list_from_arbre ex)
 let () = print_newline ()
 
 let () = List.iter (printf "%.1f, ") (list_from_liste_binaire ex2)
-
+let () = print_newline ()
 

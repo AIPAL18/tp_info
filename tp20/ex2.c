@@ -52,18 +52,21 @@ int peek(queue_t* q) {
 }
 
 int pop(queue_t* q) {
-    if (q->size > 0) {
-        q->size = q->size - 1;
-    } else {
-        q->size = q->capacity - 1;
-    }
-
+    // if (q->size > 0) {
+    //     q->size = q->size - 1;
+    // } else {
+    //     q->size = q->capacity - 1;
+    // }
+    // return q->data[q->size];
+    q->size = (q->size - 1) % q->capacity;
     return q->data[q->size];
 }
 
 void push(queue_t* q, int value) {
-    q->data[q->size] = value;
-    q->size = (q->size + 1) % q->capacity;
+    // q->data[q->size] = value;
+    // q->size = (q->size + 1) % q->capacity;
+    q->size = (q->size % q->capacity) + 1;
+    q->data[q->size - 1] = value;
 }
 
 void display_q(queue_t* q, bool all) {

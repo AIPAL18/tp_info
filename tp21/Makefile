@@ -1,4 +1,4 @@
-LANG := c
+LANG := ocaml
 
 ifeq ($(strip $(LANG)),c)
 SOURCES := main.c
@@ -6,8 +6,10 @@ else
 SOURCES := main.ml
 endif
 
+PROJECT := prog
+
 BUILD := ./build
-EXE := $(BUILD)/$(SOURCES).exe
+EXE := $(BUILD)/$(PROJECT).exe
 
 
 O_COMP := ocamlopt
@@ -16,6 +18,7 @@ C_VERSION := c23
 C_OPTI := -O0
 C_FLAGS :=  -pedantic \
 			-fsanitize=address,undefined
+O_FLAGS :=
 C_WFLAGS := -Wall \
 			-Wextra \
 			-Werror \

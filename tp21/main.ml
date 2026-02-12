@@ -280,7 +280,7 @@ module DDictHTC = struct (* Dict with Hashing Tables by Chaining *)
     
   
   let mem (dict: ('a, 'b) t) (k: 'a) = 
-    let rec is_in_list (l: ('a * 'b) list) = 
+    let rec is_in_list (l: ('a * 'b) list) = (* is_in_list vérifie si k est dans l *)
       match l with
       | [] -> false
       | (k', v')::q -> k = k' || is_in_list q
@@ -344,7 +344,7 @@ module DDictHTC = struct (* Dict with Hashing Tables by Chaining *)
   let iter (f: 'a -> 'b -> unit) (dict: ('a, 'b) t) =
     Array.iter (List.iter (fun (k, v) -> f k v)) dict.data 
   
-  let resize (dict: ('a, 'b) t) = 
+  let resize (dict: ('a, 'b) t) = (* Attention à l'ordre les clés qui sont caché par les nouvelles *)
       let new_dict = make ((Array.length dict.data) * 2)
     in
       iter (fun k v -> add new_dict k v) dict;

@@ -14,6 +14,14 @@ let _ =
   done;
   printf "Success: add\nSuccess: length\n"
 let _ =
+  for i = 0 to nb do
+    assert(mem d i);
+  done;
+  for i = nb + 1 to (nb*2) do
+    assert(not(mem d i))
+  done;
+  printf "Success: mem\n"
+let _ =
   (* w/o exception *)
   for i = 0 to nb do
     assert(find d i = string_of_int i)
@@ -94,4 +102,5 @@ let _ =
   done;
   assert(Array.length (d.data) = 2 * size);
   printf "Success resize\n"
+
   

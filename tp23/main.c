@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <assert.h>*
+
 
 typedef struct {
     int taille; // nombre d'éléments dans le tas
@@ -9,64 +10,87 @@ typedef struct {
     int *tab;
 } tas;
 
-tas* creer_tas(int capacite) {
-    tas* t = calloc(1, sizeof(tas));
-    t->capacite = capacite;
-    t->taille = 0;
-    t->tab = calloc((size_t)(t->capacite), sizeof(int));
-    return t;
+tas* creer_tas(int capacite){
+    tas* r = malloc(sizeof(tas));
+    r->tab = malloc(sizeof(int)* capacite);
+    r->capacite = capacite;
+    r->taille = 0;
+    return r;
 }
 
-void free_tas(tas* t) {
+void free_tas(tas* t){
     free(t->tab);
     free(t);
 }
 
-inline bool est_vide(tas* t) {return t->taille == 0;}
+bool est_vide(tas* t){
+    return (t->taille == 0);
+}
 
-inline int pere(int i) {return (i - 1) / 2;}
+int pere(int i){
+    return (i - 1) / 2;
+}
 
-inline int gauche(int i) {return 2*i + 1;}
+int gauche(int i){
+   return 2*i + 1; 
+}
 
-inline int droite(int i) {return 2*i + 2;}
+int droite(int i){
+  return 2*i + 2;
+}
 
-void echanger(tas* t, int i, int j) {
+void echanger(tas* t, int i, int j){
     int temp = t->tab[i];
     t->tab[i] = t->tab[j];
     t->tab[j] = temp;
 }
 
-void percoler_bas(tas* t, int i) {
-    bool is_d = 0;
-    while (t->tab[i] < gauche(i) || (is_d = t->tab[i] < droite(i))) {
-        if (is_d) {
-            echanger(t, i, droite(i));
-            i = droite(i);
+void percole_bas(tas* t, int i) {
+    assert(t->taille > i);
+    if(t->taille > droite(i)) {
+        int imax = t->tab[gauche(i)] > t->tab[droite(i)] ? gauche(i) : droite(i);
+        if(t->tab[i] < t->tab[imax]) {
+            echanger_tas(t, i, imax);
+            percole_bas(t, imax);
         }
-        else {
-            echanger(t, i, gauche(i));
-            i = gauche(i);
-        }
+    }
+    else if(t->taille > gauche(i) && t->tab[i] < t->tab[gauche(i)]) {
+        echanger_tas(t, i, gauche(i));
+        percole_bas(t, gauche(i));
     }
 }
 
-void percoler_haut(tas* t, int i) {
-    while (t->tab[i] > t->tab[pere(i)]) {
-        echanger(t, i, pere(i));
-        i = pere(i);
+void percoler_haut(tas* t, int i){
+  if(i > 0 && t -> tab [pere(i)] < t -> tab[i] ){
+        echanger(t, pere(i), i);
+        percoler_haut(t, pere(i));
     }
 }
 
-void inserer(tas* t, int x) {
-    assert(t->taille < t->capacite && "Full");
+void inserer(tas* t, int x){
+    assert(t->taille < t->capacite);
     t->tab[t->taille] = x;
-    t->taille++;
-    percoler_haut(t, t->taille - 1);
+    percole_haut(t, t->taille);
+    t->taille = t->taille + 1;
 }
 
-// int extraire_max(tas* t) {
-    
-// }
+int extraire_max(tas* t){
+    assert(t->taille > 0);
+    t->taille = t->taille -1;
+    if (t->taille > 0) {
+        echanger(t, 0, t->taille);
+        percole_bas(t, 0);
+    }
+    return t->tab[t->taille];
+}
+
+void modifier(tas* t, int i, int x) {
+    int old = t->tab[i];
+    t->tab[i] = x;
+
+    if (x > old) percoler_haut(t, i);
+    else if (x < old) percoler_bas(t, i);
+}
 
 int m_log2(int x) {
     int result = 0;
@@ -90,6 +114,52 @@ void display(tas* t) {
         for (int j = 0; j < size_of_element * ((1<<(height-(level - 1)))-1); j++) printf(" ");
     }
     printf("\n");
+}
+
+typedef struct {
+    int taille; // nombre d'éléments dans la file
+    int capacite; // taille des tableaux tab, valeurs et priorites
+    int *priorites;
+    int *valeurs;
+    int *position;
+} file_priorite;
+
+file_priorite* creer_file_priorite(int capacite) {
+    file_priorite* fp = calloc(1, sizeof(file_priorite));
+    fp->capacite = capacite;
+    fp->taille = 0;
+    fp->priorites = calloc(capacite, sizeof(int));
+    fp->valeurs = calloc(capacite, sizeof(int));
+    fp->position = calloc(capacite, sizeof(int));
+    return fp;
+}
+
+void free_file_priorite(file_priorite* f) {
+    assert(f != NULL);
+    assert(f->priorites != NULL);
+    assert(f-> valeurs != NULL);
+    assert(f->position != NULL);
+    free(f->priorites);
+    free(f->valeurs);
+    free(f->position);
+    free(f);
+}
+
+void echange_fp(file_priorite* f, int i, int j) {
+    int pos_i = f->valeurs[i];
+    int pos_j = f->valeurs[j];
+    int v_tmp = f->valeurs[j];
+    f->valeurs[j] = f->valeurs[i];
+    f->valeurs[i] = v_tmp;
+    int v_prio = f->priorites[j];
+    f->priorites[j] = f->priorites[i];
+    f->priorites[i] = v_prio;
+    f->position[pos_i] = pos_j;
+    f->position[pos_j] = pos_i;
+}
+
+void modifier_priorite(file_priorite* f, int v, int p) {
+    
 }
 
 int main(void) {

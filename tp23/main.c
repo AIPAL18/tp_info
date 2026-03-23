@@ -98,23 +98,23 @@ int m_log2(int x) {
     return result;
 }
 
-void display(tas* t) {
-    int level = -1;
-    int height = m_log2(t->taille);
-    printf("taille: %d\n\n", t->taille);
-    int size_of_element = 2;
-    
-    for (int i = 0; i < t->taille; ++i) {
-        if (i == 0 || !(i+1 >= (1 << level) && (i+1) <= ((1 << (level+1)) - 1))) {
-            level++;
-            printf("\n");
-            for (int j = 0; j < size_of_element * ((1<<(height-level))-1); j++) printf(" ");
+    void display(tas* t) {
+        int level = -1;
+        int height = m_log2(t->taille);
+        printf("taille: %d\n\n", t->taille);
+        int size_of_element = 2;
+        
+        for (int i = 0; i < t->taille; ++i) {
+            if (i == 0 || !(i+1 >= (1 << level) && (i+1) <= ((1 << (level+1)) - 1))) {
+                level++;
+                printf("\n");
+                for (int j = 0; j < size_of_element * ((1<<(height-level))-1); j++) printf(" ");
+            }
+            printf("%02d", t->tab[i]);
+            for (int j = 0; j < size_of_element * ((1<<(height-(level - 1)))-1); j++) printf(" ");
         }
-        printf("%02d", t->tab[i]);
-        for (int j = 0; j < size_of_element * ((1<<(height-(level - 1)))-1); j++) printf(" ");
+        printf("\n");
     }
-    printf("\n");
-}
 
 typedef struct {
     int taille; // nombre d'éléments dans la file

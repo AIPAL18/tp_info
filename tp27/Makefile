@@ -1,9 +1,9 @@
-LANG := ocaml
+LANG := c
 
 ifeq ($(strip $(LANG)),c)
 SOURCES := main.c
 else
-SOURCES := elie_ruggiero.ml tests.ml
+SOURCES := main.ml
 endif
 
 PROJECT := prog
@@ -23,7 +23,8 @@ C_WFLAGS := -Wall \
 			-Wextra \
 			-Werror \
 			-Wconversion
-DEBUG = -DNDEBUG
+C_DEBUG_FLAGS := -ggdb
+DEBUG = # -DNDEBUG
 
 
 all: compile
@@ -36,6 +37,7 @@ compile: $(BUILD)
 		$(C_OPTI) \
 		$(C_FLAGS) \
 		$(C_WFLAGS) \
+		$(C_DEBUG_FLAGS) \
 		$(DEBUG)
 else
 compile: $(BUILD)
@@ -53,6 +55,10 @@ run: compile
 	@echo
 	@echo "---------------"
 
+debug: compile
+	@echo "---------------"
+	@echo
+	@gdb $(EXE)
 
 # pedantic: Wattributes
 # 			Wdeclaration-after-statement

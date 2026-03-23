@@ -1,9 +1,9 @@
-LANG := ocaml
+LANG := c
 
 ifeq ($(strip $(LANG)),c)
 SOURCES := main.c
 else
-SOURCES := elie_ruggiero.ml tests.ml
+SOURCES := main.ml
 endif
 
 PROJECT := prog
